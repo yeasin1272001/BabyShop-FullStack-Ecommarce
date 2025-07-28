@@ -1,8 +1,34 @@
 import User from "../models/userModels.js";
 import bcrypt from "bcrypt";
 
-const loginUser = (req, res) => {
-  res.send("Login controller is working");
+const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    // compare password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    // success response without token
+    res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      avatar: user.avatar,
+      addresses: user.addresses || [],
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 const registerUser = async (req, res) => {
@@ -33,7 +59,7 @@ const registerUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        avatar: user.avatar, // ✅ fixed spelling
+        avatar: user.avatar,
         addresses: user.addresses,
       });
     } else {
